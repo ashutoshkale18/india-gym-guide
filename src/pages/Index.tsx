@@ -31,7 +31,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Fit<span className="text-blue-600">Track</span>
+            Macro<span className="text-blue-600">Tracker</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Your personalized fitness companion for achieving your goals with customized diet plans and workout routines

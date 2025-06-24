@@ -1,4 +1,3 @@
-
 export interface GeminiDietRequest {
   userProfile: {
     name: string;
@@ -26,12 +25,12 @@ export interface GeminiDietRequest {
 }
 
 export class GeminiService {
-  private static readonly API_KEY = 'AIzaSyBY4s2e-WOnVz5lC-vW1qcnpXJTMPxXsnw';
-  private static readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  private static readonly API_KEY = 'AIzaSyDN4A5iAUSUrUQwNrX5qPQB-FIGgGOXRDw';
+  private static readonly API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
   static async generateDietPlan(request: GeminiDietRequest) {
     const prompt = this.createDietPlanPrompt(request);
-    
+
     try {
       const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, {
         method: 'POST',
@@ -48,12 +47,20 @@ export class GeminiService {
       });
 
       if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.statusText}`);
+        const errorBody = await response.json();
+        console.error('Gemini API error response:', errorBody);
+        throw new Error(`Gemini API error: ${errorBody.error?.message || response.statusText}`);
       }
 
       const data = await response.json();
-      const generatedText = data.candidates[0].content.parts[0].text;
-      
+      const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!generatedText) {
+        throw new Error("Gemini API response format is unexpected or empty.");
+      }
+
+      console.log("Gemini raw response:\n", generatedText);
+
       return this.parseDietPlanResponse(generatedText);
     } catch (error) {
       console.error('Error generating diet plan:', error);
@@ -63,13 +70,15 @@ export class GeminiService {
 
   private static createDietPlanPrompt(request: GeminiDietRequest): string {
     const { userProfile, targetMacros, physicalCondition } = request;
-    
+
     return `
-Create a comprehensive 7-day personalized diet plan in JSON format for the following user:
+Create a comprehensive 7-day personalized diet plan for the following user.
+
+Respond ONLY with valid JSON. DO NOT include comments, explanations, or trailing commas. Follow this exact format strictly.
 
 USER PROFILE:
 - Name: ${userProfile.name}
-- Age: ${userProfile.age} years
+- Age: ${userProfile.age}
 - Gender: ${userProfile.gender}
 - Weight: ${userProfile.weight} kg
 - Height: ${userProfile.height} cm
@@ -81,27 +90,16 @@ PHYSICAL CONDITION:
 - Activity Level: ${physicalCondition.activityLevel}
 - Medical Conditions: ${physicalCondition.medicalConditions || 'None'}
 - Food Allergies: ${physicalCondition.foodAllergies || 'None'}
-- Current Supplements: ${physicalCondition.supplements || 'None'}
+- Supplements: ${physicalCondition.supplements || 'None'}
 
 TARGET MACROS (Daily):
 - Calories: ${targetMacros.calories}
 - Protein: ${targetMacros.protein}g
-- Carbohydrates: ${targetMacros.carbs}g
+- Carbs: ${targetMacros.carbs}g
 - Fats: ${targetMacros.fats}g
 - Fiber: ${targetMacros.fiber}g
 
-REQUIREMENTS:
-1. Generate a 7-day diet plan (Monday to Sunday)
-2. Each day should have 4 meals: Breakfast, Lunch, Snack, Dinner
-3. Include specific Indian food items with exact quantities
-4. Calculate precise macros for each food item
-5. Consider the user's diet preference (vegetarian/non-vegetarian)
-6. Account for physical condition, allergies, and medical conditions
-7. Ensure daily totals meet target macros (±5% tolerance)
-8. Include cooking instructions where necessary
-9. Suggest meal timing based on fitness goals
-
-Return ONLY valid JSON in this exact format:
+Return JSON in the format:
 {
   "weeklyPlan": [
     {
@@ -117,7 +115,7 @@ Return ONLY valid JSON in this exact format:
             "carbs": number,
             "fats": number,
             "fiber": number,
-            "cookingInstructions": "Brief instructions"
+            "cookingInstructions": "Instructions"
           }
         ],
         "totalMacros": {
@@ -128,9 +126,9 @@ Return ONLY valid JSON in this exact format:
           "fiber": number
         }
       },
-      "lunch": { /* same structure */ },
-      "snack": { /* same structure */ },
-      "dinner": { /* same structure */ },
+      "lunch": { ... same structure as breakfast ... },
+      "snack": { ... },
+      "dinner": { ... },
       "dailyTotals": {
         "calories": number,
         "protein": number,
@@ -139,7 +137,6 @@ Return ONLY valid JSON in this exact format:
         "fiber": number
       }
     }
-    // ... repeat for all 7 days
   ],
   "weeklyTotals": {
     "calories": number,
@@ -149,31 +146,34 @@ Return ONLY valid JSON in this exact format:
     "fiber": number
   },
   "nutritionTips": [
-    "Personalized tip 1",
-    "Personalized tip 2"
+    "Tip 1",
+    "Tip 2"
   ],
   "mealTiming": {
-    "breakfast": "Suggested time",
-    "lunch": "Suggested time", 
-    "snack": "Suggested time",
-    "dinner": "Suggested time"
+    "breakfast": "Time",
+    "lunch": "Time",
+    "snack": "Time",
+    "dinner": "Time"
   }
 }
-
-Make the diet plan specific to Indian cuisine and the user's personal profile. Be precise with measurements and macro calculations.
-`;
+Make the meals Indian and tailored to the user. Ensure exact macros. No extra text outside JSON.
+    `.trim();
   }
 
   private static parseDietPlanResponse(response: string) {
     try {
-      // Clean the response to extract JSON
       const jsonStart = response.indexOf('{');
       const jsonEnd = response.lastIndexOf('}') + 1;
       const jsonString = response.substring(jsonStart, jsonEnd);
-      
-      const parsedData = JSON.parse(jsonString);
-      
-      // Convert to the format expected by WeeklyDietPlan interface
+
+      // Clean response: remove any possible trailing commas and comments
+      const safeJson = jsonString
+        .replace(/\/\*[\s\S]*?\*\//g, '')  // Remove block comments
+        .replace(/,\s*}/g, '}')           // Remove trailing commas from objects
+        .replace(/,\s*]/g, ']');          // Remove trailing commas from arrays
+
+      const parsedData = JSON.parse(safeJson);
+
       return {
         weeklyPlan: parsedData.weeklyPlan.map((day: any) => ({
           day: day.day,
