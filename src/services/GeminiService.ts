@@ -38,12 +38,16 @@ export class GeminiService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
       });
 
       if (!response.ok) {
@@ -56,11 +60,10 @@ export class GeminiService {
       const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!generatedText) {
-        throw new Error("Gemini API response format is unexpected or empty.");
+        throw new Error('Gemini API response format is unexpected or empty.');
       }
 
-      console.log("Gemini raw response:\n", generatedText);
-
+      console.log('Gemini raw response:\n', generatedText);
       return this.parseDietPlanResponse(generatedText);
     } catch (error) {
       console.error('Error generating diet plan:', error);
@@ -102,41 +105,7 @@ TARGET MACROS (Daily):
 Return JSON in the format:
 {
   "weeklyPlan": [
-    {
-      "day": "Monday",
-      "breakfast": {
-        "name": "breakfast",
-        "items": [
-          {
-            "food": "Food Name",
-            "quantity": "Amount with unit",
-            "calories": number,
-            "protein": number,
-            "carbs": number,
-            "fats": number,
-            "fiber": number,
-            "cookingInstructions": "Instructions"
-          }
-        ],
-        "totalMacros": {
-          "calories": number,
-          "protein": number,
-          "carbs": number,
-          "fats": number,
-          "fiber": number
-        }
-      },
-      "lunch": { ... same structure as breakfast ... },
-      "snack": { ... },
-      "dinner": { ... },
-      "dailyTotals": {
-        "calories": number,
-        "protein": number,
-        "carbs": number,
-        "fats": number,
-        "fiber": number
-      }
-    }
+    { ... repeated 7 times (Monday to Sunday) with all structure ... }
   ],
   "weeklyTotals": {
     "calories": number,
@@ -145,10 +114,7 @@ Return JSON in the format:
     "fats": number,
     "fiber": number
   },
-  "nutritionTips": [
-    "Tip 1",
-    "Tip 2"
-  ],
+  "nutritionTips": ["Tip 1", "Tip 2"],
   "mealTiming": {
     "breakfast": "Time",
     "lunch": "Time",
@@ -157,7 +123,7 @@ Return JSON in the format:
   }
 }
 Make the meals Indian and tailored to the user. Ensure exact macros. No extra text outside JSON.
-    `.trim();
+`.trim();
   }
 
   private static parseDietPlanResponse(response: string) {
@@ -166,13 +132,16 @@ Make the meals Indian and tailored to the user. Ensure exact macros. No extra te
       const jsonEnd = response.lastIndexOf('}') + 1;
       const jsonString = response.substring(jsonStart, jsonEnd);
 
-      // Clean response: remove any possible trailing commas and comments
       const safeJson = jsonString
-        .replace(/\/\*[\s\S]*?\*\//g, '')  // Remove block comments
-        .replace(/,\s*}/g, '}')           // Remove trailing commas from objects
-        .replace(/,\s*]/g, ']');          // Remove trailing commas from arrays
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']');
 
       const parsedData = JSON.parse(safeJson);
+
+      if (!Array.isArray(parsedData.weeklyPlan) || parsedData.weeklyPlan.length !== 7) {
+        throw new Error('Diet plan must contain exactly 7 days. Received: ' + parsedData.weeklyPlan?.length);
+      }
 
       return {
         weeklyPlan: parsedData.weeklyPlan.map((day: any) => ({
@@ -181,11 +150,11 @@ Make the meals Indian and tailored to the user. Ensure exact macros. No extra te
           lunch: day.lunch,
           snack: day.snack,
           dinner: day.dinner,
-          dailyTotals: day.dailyTotals
+          dailyTotals: day.dailyTotals,
         })),
         weeklyTotals: parsedData.weeklyTotals,
         nutritionTips: parsedData.nutritionTips || [],
-        mealTiming: parsedData.mealTiming || {}
+        mealTiming: parsedData.mealTiming || {},
       };
     } catch (error) {
       console.error('Error parsing diet plan response:', error);

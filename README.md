@@ -1,73 +1,254 @@
-# Welcome to your Lovable project
+# MacroTracker – Indian Gym Guide
 
-## Project info
+**MacroTracker** is a full-stack MERN (MongoDB, Express, React, Node.js) application that provides personalized Indian meal plans and workout routines based on user profiles and fitness goals. It leverages Google Gemini AI for generating custom diet plans with precise macros.
 
-**URL**: https://lovable.dev/projects/0f149658-f0d4-40eb-8dc6-25caa81c845c
+---
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Personalized Nutrition:** Indian meal plans tailored to user macros and preferences.
+- **Custom Workouts:** Gym routines based on experience and fitness goals.
+- **Progress Tracking:** Downloadable PDF reports of your fitness plan.
+- **Modern UI:** Built with React, Tailwind CSS, and component libraries.
+- **AI Integration:** Uses Google Gemini API for generating diet plans.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0f149658-f0d4-40eb-8dc6-25caa81c845c) and start prompting.
+## Folder Structure
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+india-gym-guide/
+├── public/                 # Static assets (icons, manifest, etc.)
+├── server/                 # Express backend (controllers, routes, utils)
+├── src/                    # React frontend source code
+│   ├── components/         # Reusable UI components
+│   ├── hooks/              # Custom React hooks
+│   ├── pages/              # Page components (Index, Dashboard, etc.)
+│   ├── types/              # TypeScript types/interfaces
+│   ├── App.tsx             # Main React app
+│   └── main.tsx            # React entry point
+├── package.json            # Project dependencies and scripts
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── vite.config.ts          # Vite build tool config
+├── tsconfig.json           # TypeScript configuration
+└── README.md               # Project documentation
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Prerequisites
 
-**Use GitHub Codespaces**
+- **Node.js** (v18+ recommended)
+- **npm** (v9+) or **yarn**
+- **MongoDB** (local or Atlas cloud instance)
+- **Google Gemini API Key** (for AI diet plan generation)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Getting Started
 
-This project is built with:
+### 1. Clone the Repository
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```sh
+git clone https://github.com/your-username/india-gym-guide.git
+cd india-gym-guide
+```
 
-## How can I deploy this project?
+### 2. Install Dependencies
 
-Simply open [Lovable](https://lovable.dev/projects/0f149658-f0d4-40eb-8dc6-25caa81c845c) and click on Share -> Publish.
+```sh
+npm install
+# or
+yarn install
+```
 
-## Can I connect a custom domain to my Lovable project?
+### 3. Configure Environment Variables
 
-Yes, you can!
+Create a `.env` file in the root directory for backend secrets:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```
+MONGODB_URI=your_mongodb_connection_string
+GEMINI_API_KEY=your_google_gemini_api_key
+PORT=5000
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+> **Note:**  
+> The Gemini API key is currently hardcoded in [`GeminiService.ts`](src/services/GeminiService.ts).  
+> For production, move it to environment variables for security.
+
+### 4. Start MongoDB
+
+- If running locally, start your MongoDB server:
+  ```sh
+  mongod
+  ```
+
+### 5. Start the Backend Server
+
+```sh
+cd server
+npm install
+npm run dev
+# or
+yarn dev
+```
+
+- The backend should run on `http://localhost:5000` (or your configured port).
+
+### 6. Start the Frontend
+
+Open a new terminal in the project root:
+
+```sh
+npm run dev
+# or
+yarn dev
+```
+
+- The frontend will run on `http://localhost:5173` (default Vite port).
+
+---
+
+## Usage
+
+1. Open [http://localhost:5173](http://localhost:5173) in your browser.
+2. Click **Get Started - Create Your Profile**.
+3. Fill in your fitness profile and submit.
+4. View your personalized dashboard with AI-generated meal plans and workouts.
+
+---
+
+## Customization
+
+- **API Keys:**  
+  Update your Gemini API key in the `.env` file and refactor [`GeminiService.ts`](src/services/GeminiService.ts) to read from environment variables.
+- **Styling:**  
+  Modify `tailwind.config.ts` and CSS files for custom themes.
+- **Backend Logic:**  
+# MacroTracker – Indian Gym Guide
+
+**MacroTracker** is a full-stack MERN (MongoDB, Express, React, Node.js) application that provides personalized Indian meal plans and workout routines based on user profiles and fitness goals. It leverages Google Gemini AI for generating custom diet plans with precise macros.
+
+---
+
+## Features
+
+- **Personalized Nutrition:** Indian meal plans tailored to user macros and preferences.
+- **Custom Workouts:** Gym routines based on experience and fitness goals.
+- **Progress Tracking:** Downloadable PDF reports of your fitness plan.
+- **Modern UI:** Built with React, Tailwind CSS, and component libraries.
+- **AI Integration:** Uses Google Gemini API for generating diet plans.
+
+---
+
+## Folder Structure
+
+```
+india-gym-guide/
+├── public/                 # Static assets (icons, manifest, etc.)
+├── server/                 # Express backend (controllers, routes, utils)
+├── src/                    # React frontend source code
+│   ├── components/         # Reusable UI components
+│   ├── hooks/              # Custom React hooks
+│   ├── pages/              # Page components (Index, Dashboard, etc.)
+│   ├── types/              # TypeScript types/interfaces
+│   ├── App.tsx             # Main React app
+│   └── main.tsx            # React entry point
+├── package.json            # Project dependencies and scripts
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── vite.config.ts          # Vite build tool config
+├── tsconfig.json           # TypeScript configuration
+└── README.md               # Project documentation
+```
+
+---
+
+## Prerequisites
+
+- **Node.js** (v18+ recommended)
+- **npm** (v9+) or **yarn**
+- **MongoDB** (local or Atlas cloud instance)
+- **Google Gemini API Key** (for AI diet plan generation)
+
+---
+
+## Getting Started
+
+### 1. Clone the Repository
+
+```sh
+git clone https://github.com/your-username/india-gym-guide.git
+cd india-gym-guide
+```
+
+### 2. Install Dependencies
+
+```sh
+npm install
+# or
+yarn install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the root directory for backend secrets:
+
+```
+MONGODB_URI=your_mongodb_connection_string
+GEMINI_API_KEY=your_google_gemini_api_key
+PORT=5000
+```
+
+> **Note:**  
+> The Gemini API key is currentlycoded in [`GeminiService.ts`](src/services/GeminiService.ts).  
+> For production, move it to environment variables for security.
+
+### 4. Start MongoDB
+
+- If running locally, start your MongoDB server:
+  ```sh
+  mongod
+  ```
+
+### 5. Start the Backend Server
+
+```sh
+cd server
+npm install
+npm run dev
+# or
+yarn dev
+```
+
+- The backend should run on `http://localhost:5000` (or your configured port).
+
+### 6. Start the Frontend
+
+Open a new terminal in the project root:
+
+```sh
+npm run dev
+# or
+yarn dev
+```
+
+- The frontend will run on `http://localhost:5173` (default Vite port).
+
+---
+
+## Usage
+
+1. Open [http://localhost:5173](http://localhost:5173) in your browser.
+2. Click **Get Started - Create Your Profile**.
+3. Fill in your fitness profile and submit.
+4. View your personalized dashboard with AI-generated meal plans and workouts.
+
+---
+
+## Customization
+
+- **API Keys:**  
+  Update your Gemini API key in the `.env` file and refactor [`GeminiService.ts`](src/services/GeminiService.ts) to read from environment variables.
+- **Styling:**  
+  Modify `tailwind.config.ts` and CSS files for custom themes.
+- **Backend Logic:**  
