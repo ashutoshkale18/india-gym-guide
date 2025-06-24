@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserProfile, WeeklyDietPlan, WorkoutPlan, MacroNutrients } from '@/types/UserProfile';
 import { CalorieCalculator } from '@/utils/CalorieCalculator';
-import { DietPlanGenerator } from '@/utils/DietPlanGenerator';
 import { WorkoutPlanGenerator } from '@/utils/WorkoutPlanGenerator';
 import { PDFGenerator } from '@/utils/PDFGenerator';
+import { GeminiService } from '@/services/GeminiService';
 import { WeeklyDietPlanDisplay } from '@/components/WeeklyDietPlanDisplay';
 import { WorkoutPlanDisplay } from '@/components/WorkoutPlanDisplay';
 import { MacroDisplay } from '@/components/MacroDisplay';
-import { ArrowLeft, Download, User } from 'lucide-react';
+import { ArrowLeft, Download, User, Loader2 } from 'lucide-react';
 
 interface FitnessDashboardProps {
   profile: UserProfile;
@@ -23,20 +23,42 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [macros, setMacros] = useState<MacroNutrients | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingDiet, setIsGeneratingDiet] = useState(false);
+  const [dietError, setDietError] = useState<string | null>(null);
 
   useEffect(() => {
     // Calculate macros
     const calculatedMacros = CalorieCalculator.calculateMacros(profile);
     setMacros(calculatedMacros);
 
-    // Generate weekly diet plan
-    const generatedWeeklyDietPlan = DietPlanGenerator.generateWeeklyPlan(profile, calculatedMacros);
-    setWeeklyDietPlan(generatedWeeklyDietPlan);
+    // Generate AI-powered diet plan
+    generateAIDietPlan(calculatedMacros);
 
     // Generate workout plan
     const generatedWorkoutPlan = WorkoutPlanGenerator.generatePlan(profile);
     setWorkoutPlan(generatedWorkoutPlan);
   }, [profile]);
+
+  const generateAIDietPlan = async (calculatedMacros: MacroNutrients) => {
+    setIsGeneratingDiet(true);
+    setDietError(null);
+    
+    try {
+      const geminiRequest = {
+        userProfile: profile,
+        targetMacros: calculatedMacros,
+        physicalCondition: profile.physicalCondition
+      };
+
+      const aiDietPlan = await GeminiService.generateDietPlan(geminiRequest);
+      setWeeklyDietPlan(aiDietPlan);
+    } catch (error) {
+      console.error('Failed to generate AI diet plan:', error);
+      setDietError('Failed to generate personalized diet plan. Please try again.');
+    } finally {
+      setIsGeneratingDiet(false);
+    }
+  };
 
   const handleDownloadPDF = async () => {
     if (!weeklyDietPlan || !workoutPlan || !macros) return;
@@ -53,6 +75,12 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
     }
   };
 
+  const retryDietGeneration = () => {
+    if (macros) {
+      generateAIDietPlan(macros);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -64,13 +92,13 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Your Fitness Plan</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Your AI-Powered Fitness Plan</h1>
               <p className="text-gray-600">Welcome back, {profile.name}!</p>
             </div>
           </div>
           <Button 
             onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF}
+            disabled={isGeneratingPDF || !weeklyDietPlan}
             className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
@@ -87,7 +115,7 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-5 gap-4 text-sm">
+            <div className="grid md:grid-cols-6 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Goal:</span>
                 <p className="capitalize">{profile.fitnessGoal.replace('-', ' ')}</p>
@@ -108,6 +136,10 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
                 <span className="font-medium text-gray-600">Diet:</span>
                 <p className="capitalize">{profile.dietPreference}</p>
               </div>
+              <div>
+                <span className="font-medium text-gray-600">Activity:</span>
+                <p className="capitalize">{profile.physicalCondition.activityLevel.replace('-', ' ')}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -118,12 +150,35 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
         {/* Main Content Tabs */}
         <Tabs defaultValue="diet" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="diet">7-Day Diet Plan</TabsTrigger>
+            <TabsTrigger value="diet">AI-Generated 7-Day Diet Plan</TabsTrigger>
             <TabsTrigger value="workout">6-Day Workout Plan</TabsTrigger>
           </TabsList>
 
           <TabsContent value="diet">
-            {weeklyDietPlan && <WeeklyDietPlanDisplay weeklyDietPlan={weeklyDietPlan} />}
+            {isGeneratingDiet ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                    <p className="text-lg font-medium">Generating your personalized diet plan...</p>
+                    <p className="text-sm text-gray-600">This may take a few moments as we create a plan specific to your needs</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : dietError ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <p className="text-red-600 font-medium">{dietError}</p>
+                    <Button onClick={retryDietGeneration} className="mt-4">
+                      Try Again
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : weeklyDietPlan ? (
+              <WeeklyDietPlanDisplay weeklyDietPlan={weeklyDietPlan} />
+            ) : null}
           </TabsContent>
 
           <TabsContent value="workout">

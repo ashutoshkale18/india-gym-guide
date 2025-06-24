@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { WeeklyDietPlan, Meal } from '@/types/UserProfile';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 
 interface WeeklyDietPlanDisplayProps {
@@ -22,6 +22,9 @@ const MealCard = ({ meal, mealName }: { meal: Meal; mealName: string }) => (
         <div key={index} className="text-xs">
           <div className="font-medium">{item.food}</div>
           <div className="text-gray-600">{item.quantity}</div>
+          {(item as any).cookingInstructions && (
+            <div className="text-blue-600 italic mt-1">{(item as any).cookingInstructions}</div>
+          )}
         </div>
       ))}
     </div>
@@ -43,7 +46,7 @@ export const WeeklyDietPlanDisplay = ({ weeklyDietPlan }: WeeklyDietPlanDisplayP
       {/* Weekly Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Totals</CardTitle>
+          <CardTitle>Weekly Totals - AI Generated Plan</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-5 gap-4 text-center">
@@ -70,6 +73,60 @@ export const WeeklyDietPlanDisplay = ({ weeklyDietPlan }: WeeklyDietPlanDisplayP
           </div>
         </CardContent>
       </Card>
+
+      {/* Meal Timing */}
+      {weeklyDietPlan.mealTiming && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Recommended Meal Timing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-600">Breakfast:</span>
+                <p>{weeklyDietPlan.mealTiming.breakfast}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Lunch:</span>
+                <p>{weeklyDietPlan.mealTiming.lunch}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Snack:</span>
+                <p>{weeklyDietPlan.mealTiming.snack}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Dinner:</span>
+                <p>{weeklyDietPlan.mealTiming.dinner}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Nutrition Tips */}
+      {weeklyDietPlan.nutritionTips && weeklyDietPlan.nutritionTips.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5" />
+              Personalized Nutrition Tips
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {weeklyDietPlan.nutritionTips.map((tip, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Daily Plans */}
       <div className="space-y-4">
