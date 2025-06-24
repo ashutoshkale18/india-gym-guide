@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserProfile, DietPlan, WorkoutPlan, MacroNutrients } from '@/types/UserProfile';
+import { UserProfile, WeeklyDietPlan, WorkoutPlan, MacroNutrients } from '@/types/UserProfile';
 import { CalorieCalculator } from '@/utils/CalorieCalculator';
 import { DietPlanGenerator } from '@/utils/DietPlanGenerator';
 import { WorkoutPlanGenerator } from '@/utils/WorkoutPlanGenerator';
 import { PDFGenerator } from '@/utils/PDFGenerator';
-import { DietPlanDisplay } from '@/components/DietPlanDisplay';
+import { WeeklyDietPlanDisplay } from '@/components/WeeklyDietPlanDisplay';
 import { WorkoutPlanDisplay } from '@/components/WorkoutPlanDisplay';
 import { MacroDisplay } from '@/components/MacroDisplay';
 import { ArrowLeft, Download, User } from 'lucide-react';
@@ -19,7 +19,7 @@ interface FitnessDashboardProps {
 }
 
 export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) => {
-  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [weeklyDietPlan, setWeeklyDietPlan] = useState<WeeklyDietPlan | null>(null);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [macros, setMacros] = useState<MacroNutrients | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -29,9 +29,9 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
     const calculatedMacros = CalorieCalculator.calculateMacros(profile);
     setMacros(calculatedMacros);
 
-    // Generate diet plan
-    const generatedDietPlan = DietPlanGenerator.generateWeeklyPlan(profile, calculatedMacros);
-    setDietPlan(generatedDietPlan);
+    // Generate weekly diet plan
+    const generatedWeeklyDietPlan = DietPlanGenerator.generateWeeklyPlan(profile, calculatedMacros);
+    setWeeklyDietPlan(generatedWeeklyDietPlan);
 
     // Generate workout plan
     const generatedWorkoutPlan = WorkoutPlanGenerator.generatePlan(profile);
@@ -39,11 +39,13 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
   }, [profile]);
 
   const handleDownloadPDF = async () => {
-    if (!dietPlan || !workoutPlan || !macros) return;
+    if (!weeklyDietPlan || !workoutPlan || !macros) return;
 
     setIsGeneratingPDF(true);
     try {
-      await PDFGenerator.generateCompletePlan(profile, dietPlan, workoutPlan, macros);
+      // Convert weekly plan to daily for PDF compatibility
+      const dailyPlan = weeklyDietPlan.weeklyPlan[0]; // Use first day as template
+      await PDFGenerator.generateCompletePlan(profile, dailyPlan, workoutPlan, macros);
     } catch (error) {
       console.error('PDF generation failed:', error);
     } finally {
@@ -85,7 +87,7 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4 text-sm">
+            <div className="grid md:grid-cols-5 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Goal:</span>
                 <p className="capitalize">{profile.fitnessGoal.replace('-', ' ')}</p>
@@ -102,6 +104,10 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
                 <span className="font-medium text-gray-600">Height:</span>
                 <p>{profile.height} cm</p>
               </div>
+              <div>
+                <span className="font-medium text-gray-600">Diet:</span>
+                <p className="capitalize">{profile.dietPreference}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -112,12 +118,12 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
         {/* Main Content Tabs */}
         <Tabs defaultValue="diet" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="diet">Diet Plan</TabsTrigger>
-            <TabsTrigger value="workout">Workout Plan</TabsTrigger>
+            <TabsTrigger value="diet">7-Day Diet Plan</TabsTrigger>
+            <TabsTrigger value="workout">6-Day Workout Plan</TabsTrigger>
           </TabsList>
 
           <TabsContent value="diet">
-            {dietPlan && <DietPlanDisplay dietPlan={dietPlan} />}
+            {weeklyDietPlan && <WeeklyDietPlanDisplay weeklyDietPlan={weeklyDietPlan} />}
           </TabsContent>
 
           <TabsContent value="workout">

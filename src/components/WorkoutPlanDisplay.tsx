@@ -24,7 +24,7 @@ export const WorkoutPlanDisplay = ({ workoutPlan }: WorkoutPlanDisplayProps) => 
               {workoutPlan.totalDays} Days/Week
             </Badge>
             <div className="text-sm text-gray-600">
-              {workoutPlan.weeklyPlan.map(day => day.day).join(', ')}
+              6-Day Split Program
             </div>
           </div>
         </CardContent>
@@ -34,10 +34,19 @@ export const WorkoutPlanDisplay = ({ workoutPlan }: WorkoutPlanDisplayProps) => 
         {workoutPlan.weeklyPlan.map((day, index) => (
           <Card key={index}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Dumbbell className="w-5 h-5" />
-                {day.day}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Dumbbell className="w-5 h-5" />
+                  {day.day}
+                </CardTitle>
+                <div className="flex gap-1 flex-wrap">
+                  {day.muscleGroups?.map((muscle, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {muscle}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

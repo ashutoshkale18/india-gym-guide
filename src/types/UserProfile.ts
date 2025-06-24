@@ -7,6 +7,7 @@ export interface UserProfile {
   height: number; // cm
   fitnessGoal: 'fat-loss' | 'bulking' | 'recomposition';
   experienceLevel: 'beginner' | 'intermediate' | 'advanced';
+  dietPreference: 'vegetarian' | 'non-vegetarian';
 }
 
 export interface MacroNutrients {
@@ -31,6 +32,20 @@ export interface Meal {
   totalMacros: MacroNutrients;
 }
 
+export interface DayMealPlan {
+  day: string;
+  breakfast: Meal;
+  lunch: Meal;
+  snack: Meal;
+  dinner: Meal;
+  dailyTotals: MacroNutrients;
+}
+
+export interface WeeklyDietPlan {
+  weeklyPlan: DayMealPlan[];
+  weeklyTotals: MacroNutrients;
+}
+
 export interface DietPlan {
   breakfast: Meal;
   lunch: Meal;
@@ -41,6 +56,7 @@ export interface DietPlan {
 
 export interface WorkoutDay {
   day: string;
+  muscleGroups: string[];
   exercises: Array<{
     name: string;
     sets: number;

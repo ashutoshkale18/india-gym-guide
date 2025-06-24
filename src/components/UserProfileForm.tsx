@@ -19,7 +19,8 @@ export const UserProfileForm = ({ onSubmit }: UserProfileFormProps) => {
     weight: '',
     height: '',
     fitnessGoal: '',
-    experienceLevel: ''
+    experienceLevel: '',
+    dietPreference: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,7 +33,8 @@ export const UserProfileForm = ({ onSubmit }: UserProfileFormProps) => {
       weight: parseFloat(formData.weight),
       height: parseFloat(formData.height),
       fitnessGoal: formData.fitnessGoal as 'fat-loss' | 'bulking' | 'recomposition',
-      experienceLevel: formData.experienceLevel as 'beginner' | 'intermediate' | 'advanced'
+      experienceLevel: formData.experienceLevel as 'beginner' | 'intermediate' | 'advanced',
+      dietPreference: formData.dietPreference as 'vegetarian' | 'non-vegetarian'
     };
 
     onSubmit(profile);
@@ -129,18 +131,33 @@ export const UserProfileForm = ({ onSubmit }: UserProfileFormProps) => {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="experienceLevel">Experience Level</Label>
-        <Select value={formData.experienceLevel} onValueChange={(value) => setFormData(prev => ({ ...prev, experienceLevel: value }))}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select your experience level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="beginner">Beginner (0-6 months)</SelectItem>
-            <SelectItem value="intermediate">Intermediate (6 months - 2 years)</SelectItem>
-            <SelectItem value="advanced">Advanced (2+ years)</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="experienceLevel">Experience Level</Label>
+          <Select value={formData.experienceLevel} onValueChange={(value) => setFormData(prev => ({ ...prev, experienceLevel: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select your experience level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="beginner">Beginner (0-6 months)</SelectItem>
+              <SelectItem value="intermediate">Intermediate (6 months - 2 years)</SelectItem>
+              <SelectItem value="advanced">Advanced (2+ years)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dietPreference">Diet Preference</Label>
+          <Select value={formData.dietPreference} onValueChange={(value) => setFormData(prev => ({ ...prev, dietPreference: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select your diet preference" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vegetarian">Vegetarian</SelectItem>
+              <SelectItem value="non-vegetarian">Non-Vegetarian</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Button 
