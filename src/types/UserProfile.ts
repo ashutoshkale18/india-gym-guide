@@ -1,4 +1,3 @@
-
 export interface UserProfile {
   name: string;
   age: number;
@@ -8,6 +7,12 @@ export interface UserProfile {
   fitnessGoal: 'fat-loss' | 'bulking' | 'recomposition';
   experienceLevel: 'beginner' | 'intermediate' | 'advanced';
   dietPreference: 'vegetarian' | 'non-vegetarian';
+  physicalCondition: {
+    activityLevel: 'sedentary' | 'lightly-active' | 'moderately-active' | 'very-active' | 'extremely-active';
+    medicalConditions: string;
+    foodAllergies: string;
+    supplements: string;
+  };
 }
 
 export interface MacroNutrients {
@@ -44,6 +49,13 @@ export interface DayMealPlan {
 export interface WeeklyDietPlan {
   weeklyPlan: DayMealPlan[];
   weeklyTotals: MacroNutrients;
+  nutritionTips?: string[];
+  mealTiming?: {
+    breakfast: string;
+    lunch: string;
+    snack: string;
+    dinner: string;
+  };
 }
 
 export interface DietPlan {
