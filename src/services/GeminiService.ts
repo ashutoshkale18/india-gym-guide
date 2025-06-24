@@ -1,3 +1,4 @@
+// GeminiService.ts
 export interface GeminiDietRequest {
   userProfile: {
     name: string;
@@ -34,37 +35,28 @@ export class GeminiService {
     try {
       const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-        }),
+              parts: [{ text: prompt }]
+            }
+          ]
+        })
       });
 
       if (!response.ok) {
         const errorBody = await response.json();
-        console.error('Gemini API error response:', errorBody);
         throw new Error(`Gemini API error: ${errorBody.error?.message || response.statusText}`);
       }
 
       const data = await response.json();
       const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      if (!generatedText) {
-        throw new Error('Gemini API response format is unexpected or empty.');
-      }
+      if (!generatedText) throw new Error('Empty or invalid Gemini response');
 
-      console.log('Gemini raw response:\n', generatedText);
-      return this.parseDietPlanResponse(generatedText);
+      const parsed = this.parseDietPlanResponse(generatedText);
+      return parsed;
     } catch (error) {
       console.error('Error generating diet plan:', error);
       throw error;
@@ -76,7 +68,6 @@ export class GeminiService {
 
     return `
 Create a comprehensive 7-day personalized diet plan for the following user.
-
 Respond ONLY with valid JSON. DO NOT include comments, explanations, or trailing commas. Follow this exact format strictly.
 
 USER PROFILE:
@@ -105,7 +96,20 @@ TARGET MACROS (Daily):
 Return JSON in the format:
 {
   "weeklyPlan": [
-    { ... repeated 7 times (Monday to Sunday) with all structure ... }
+    {
+      "day": "Monday",
+      "breakfast": { ... },
+      "lunch": { ... },
+      "snack": { ... },
+      "dinner": { ... },
+      "dailyTotals": {
+        "calories": number,
+        "protein": number,
+        "carbs": number,
+        "fats": number,
+        "fiber": number
+      }
+    }
   ],
   "weeklyTotals": {
     "calories": number,
@@ -114,7 +118,10 @@ Return JSON in the format:
     "fats": number,
     "fiber": number
   },
-  "nutritionTips": ["Tip 1", "Tip 2"],
+  "nutritionTips": [
+    "Tip 1",
+    "Tip 2"
+  ],
   "mealTiming": {
     "breakfast": "Time",
     "lunch": "Time",
@@ -122,8 +129,7 @@ Return JSON in the format:
     "dinner": "Time"
   }
 }
-Make the meals Indian and tailored to the user. Ensure exact macros. No extra text outside JSON.
-`.trim();
+    `.trim();
   }
 
   private static parseDietPlanResponse(response: string) {
@@ -133,32 +139,79 @@ Make the meals Indian and tailored to the user. Ensure exact macros. No extra te
       const jsonString = response.substring(jsonStart, jsonEnd);
 
       const safeJson = jsonString
-        .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/,\s*}/g, '}')
         .replace(/,\s*]/g, ']');
 
-      const parsedData = JSON.parse(safeJson);
-
-      if (!Array.isArray(parsedData.weeklyPlan) || parsedData.weeklyPlan.length !== 7) {
-        throw new Error('Diet plan must contain exactly 7 days. Received: ' + parsedData.weeklyPlan?.length);
-      }
+      const parsed = JSON.parse(safeJson);
 
       return {
-        weeklyPlan: parsedData.weeklyPlan.map((day: any) => ({
+        weeklyPlan: parsed.weeklyPlan.map((day: any) => ({
           day: day.day,
-          breakfast: day.breakfast,
-          lunch: day.lunch,
-          snack: day.snack,
-          dinner: day.dinner,
-          dailyTotals: day.dailyTotals,
+          breakfast: this.ensureMealStructure(day.breakfast),
+          lunch: this.ensureMealStructure(day.lunch),
+          snack: this.ensureMealStructure(day.snack),
+          dinner: this.ensureMealStructure(day.dinner),
+          dailyTotals: day.dailyTotals || this.computeDailyTotals(day)
         })),
-        weeklyTotals: parsedData.weeklyTotals,
-        nutritionTips: parsedData.nutritionTips || [],
-        mealTiming: parsedData.mealTiming || {},
+        weeklyTotals: parsed.weeklyTotals,
+        nutritionTips: parsed.nutritionTips || [],
+        mealTiming: parsed.mealTiming || {}
       };
     } catch (error) {
-      console.error('Error parsing diet plan response:', error);
-      throw new Error('Failed to parse AI-generated diet plan');
+      throw new Error('Failed to parse Gemini diet response');
     }
+  }
+
+  private static ensureMealStructure(meal: any) {
+    if (!meal || !Array.isArray(meal.foodItems)) {
+      return {
+        items: [],
+        totalMacros: { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
+      };
+    }
+
+    const items = meal.foodItems.map((item: any) => ({
+      food: item.item || item.food || 'Unknown food',
+      quantity: item.quantity || '',
+      calories: item.calories || 0,
+      protein: item.protein || 0,
+      carbs: item.carbs || 0,
+      fats: item.fats || 0,
+      fiber: item.fiber || 0,
+      cookingInstructions: item.cookingInstructions || ''
+    }));
+
+    const totalMacros = items.reduce(
+      (acc, item) => ({
+        calories: acc.calories + item.calories,
+        protein: acc.protein + item.protein,
+        carbs: acc.carbs + item.carbs,
+        fats: acc.fats + item.fats,
+        fiber: acc.fiber + item.fiber
+      }),
+      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
+    );
+
+    return { items, totalMacros };
+  }
+
+  private static computeDailyTotals(day: any) {
+    const meals = ['breakfast', 'lunch', 'snack', 'dinner'];
+    const totals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
+
+    for (const mealName of meals) {
+      const meal = day[mealName];
+      if (!meal || !Array.isArray(meal.foodItems)) continue;
+
+      meal.foodItems.forEach((item: any) => {
+        totals.calories += item.calories || 0;
+        totals.protein += item.protein || 0;
+        totals.carbs += item.carbs || 0;
+        totals.fats += item.fats || 0;
+        totals.fiber += item.fiber || 0;
+      });
+    }
+
+    return totals;
   }
 }
