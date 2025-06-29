@@ -1,18 +1,16 @@
 
 import { useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserProfileForm } from '@/components/UserProfileForm';
 import { FitnessDashboard } from '@/components/FitnessDashboard';
 import { UserProfile } from '@/types/UserProfile';
-import { Dumbbell, Target, TrendingUp, Zap, Brain, Rocket } from 'lucide-react';
+import { Dumbbell, Zap, Brain, Rocket } from 'lucide-react';
 
 const Index = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const { scrollYProgress } = useScroll();
-  const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   const handleProfileSubmit = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -64,7 +62,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -95,14 +93,13 @@ const Index = () => {
 
       {/* Hero Section */}
       <motion.div 
-        className="container mx-auto px-4 py-16 relative z-10"
-        style={{ opacity }}
+        className="container mx-auto px-4 h-full flex flex-col justify-center items-center relative z-10"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
         <motion.div 
-          className="text-center mb-16"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+          className="text-center max-w-4xl"
         >
           <motion.div
             variants={itemVariants}
@@ -151,77 +148,8 @@ const Index = () => {
               <span className="text-sm font-medium">NEXT-GEN FITNESS</span>
             </div>
           </motion.div>
-        </motion.div>
 
-        {/* Features Grid */}
-        <motion.div 
-          className="grid md:grid-cols-3 gap-8 mb-16"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants}>
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:bg-slate-800/70 transition-all duration-300 group">
-              <CardHeader className="text-center">
-                <motion.div
-                  className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                  whileHover={{ rotate: 360 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Target className="w-8 h-8 text-white" />
-                </motion.div>
-                <CardTitle className="text-white text-xl">Neural Nutrition</CardTitle>
-                <CardDescription className="text-gray-400">
-                  AI-crafted Indian meal plans with quantum-precise macro tracking for optimal performance
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:bg-slate-800/70 transition-all duration-300 group">
-              <CardHeader className="text-center">
-                <motion.div
-                  className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                  whileHover={{ rotate: -360 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Dumbbell className="w-8 h-8 text-white" />
-                </motion.div>
-                <CardTitle className="text-white text-xl">Cyber Workouts</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Adaptive training protocols that evolve with your strength and push your limits
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:bg-slate-800/70 transition-all duration-300 group">
-              <CardHeader className="text-center">
-                <motion.div
-                  className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                  whileHover={{ rotate: 360 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <TrendingUp className="w-8 h-8 text-white" />
-                </motion.div>
-                <CardTitle className="text-white text-xl">Progress Matrix</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Real-time analytics and downloadable reports to track your transformation journey
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-        </motion.div>
-
-        {/* CTA Section */}
-        <motion.div 
-          className="text-center"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+          {/* CTA Section */}
           {!showForm ? (
             <motion.div variants={itemVariants}>
               <motion.div
