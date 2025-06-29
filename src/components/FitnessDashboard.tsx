@@ -46,6 +46,8 @@ export const FitnessDashboard = ({ profile, onReset }: FitnessDashboardProps) =>
 
       const aiDietPlan = await GeminiService.generateDietPlan(geminiRequest);
 
+      console.log('AI Diet Plan:', aiDietPlan);
+      
       if (!aiDietPlan.weeklyPlan || aiDietPlan.weeklyPlan.length !== 7) {
         throw new Error('Incomplete weekly plan. AI did not return all 7 days.');
       }

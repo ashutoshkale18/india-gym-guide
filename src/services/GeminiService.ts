@@ -1,4 +1,3 @@
-// GeminiService.ts
 export interface GeminiDietRequest {
   userProfile: {
     name: string;
@@ -37,11 +36,7 @@ export class GeminiService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ]
+          contents: [{ parts: [{ text: prompt }] }]
         })
       });
 
@@ -63,14 +58,56 @@ export class GeminiService {
     }
   }
 
-  private static createDietPlanPrompt(request: GeminiDietRequest): string {
-    const { userProfile, targetMacros, physicalCondition } = request;
+private static createDietPlanPrompt(request: GeminiDietRequest): string {
+  const { userProfile, targetMacros, physicalCondition } = request;
 
-    return `
-Create a comprehensive 7-day personalized diet plan for the following user.
-Respond ONLY with valid JSON. DO NOT include comments, explanations, or trailing commas. Follow this exact format strictly.
+  return `
+Generate a complete and personalized 7-day diet plan in strict JSON format. Follow these instructions:
 
-USER PROFILE:
+======================
+📌 STRUCTURE RULES:
+======================
+- Return ONLY VALID JSON. No comments or explanations.
+- The object must contain:
+  • "weeklyPlan": 7-day meal plan (Monday to Sunday, in order)
+  • "weeklyTotals": summed macros of all 7 days
+  • "nutritionTips": helpful tips as an array of 2 strings
+  • "mealTiming": standard meal times for all days
+
+======================
+📌 MEAL FORMAT:
+======================
+Each day must contain:
+- "day": string (e.g., "Monday")
+- "breakfast", "lunch", "snack", "dinner": each with
+  • "foodItems": an array of meals with
+    - "food": non-generic name (avoid "unknown")
+    - "quantity": exact measurement (e.g., "1 cup", "150g")
+    - "calories", "protein", "carbs", "fats", "fiber": numeric
+    - "cookingInstructions": short sentence
+  • "totalMacros": sum of macros for that meal
+- "dailyTotals": sum of all macros for the entire day (based on foodItems)
+
+======================
+📌 MACRO ENFORCEMENT:
+======================
+- Each day's dailyTotals **must closely match the following targets**:
+  • Calories: ${targetMacros.calories}
+  • Protein: ${targetMacros.protein}g ✅ MUST match this value ±2%
+  • Carbs: ${targetMacros.carbs}g
+  • Fats: ${targetMacros.fats}g
+  • Fiber: ${targetMacros.fiber}g
+
+- Allow only ±2% deviation. For example:
+  • 150g protein → min: 147g, max: 153g
+- All 5 macros must be present in each food item and meal.
+- No rounding or vague values. Use real numbers.
+- Do NOT overfit or underfit macros.
+- Do NOT copy meals between days.
+
+======================
+📌 USER INFO:
+======================
 - Name: ${userProfile.name}
 - Age: ${userProfile.age}
 - Gender: ${userProfile.gender}
@@ -80,57 +117,83 @@ USER PROFILE:
 - Experience Level: ${userProfile.experienceLevel}
 - Diet Preference: ${userProfile.dietPreference}
 
-PHYSICAL CONDITION:
+======================
+📌 PHYSICAL CONDITION:
+======================
 - Activity Level: ${physicalCondition.activityLevel}
 - Medical Conditions: ${physicalCondition.medicalConditions || 'None'}
 - Food Allergies: ${physicalCondition.foodAllergies || 'None'}
 - Supplements: ${physicalCondition.supplements || 'None'}
 
-TARGET MACROS (Daily):
-- Calories: ${targetMacros.calories}
-- Protein: ${targetMacros.protein}g
-- Carbs: ${targetMacros.carbs}g
-- Fats: ${targetMacros.fats}g
-- Fiber: ${targetMacros.fiber}g
+======================
+📌 RETURN JSON TEMPLATE:
+======================
 
-Return JSON in the format:
 {
   "weeklyPlan": [
     {
       "day": "Monday",
-      "breakfast": { ... },
+      "breakfast": {
+        "foodItems": [
+          {
+            "food": "Oats with milk and almonds",
+            "quantity": "1 bowl",
+            "calories": 350,
+            "protein": 20,
+            "carbs": 40,
+            "fats": 12,
+            "fiber": 6,
+            "cookingInstructions": "Boil oats in milk for 5 mins, add chopped almonds."
+          }
+        ],
+        "totalMacros": {
+          "calories": 350,
+          "protein": 20,
+          "carbs": 40,
+          "fats": 12,
+          "fiber": 6
+        }
+      },
       "lunch": { ... },
       "snack": { ... },
       "dinner": { ... },
       "dailyTotals": {
-        "calories": number,
-        "protein": number,
-        "carbs": number,
-        "fats": number,
-        "fiber": number
+        "calories": ${targetMacros.calories},
+        "protein": ${targetMacros.protein},
+        "carbs": ${targetMacros.carbs},
+        "fats": ${targetMacros.fats},
+        "fiber": ${targetMacros.fiber}
       }
-    }
+    },
+    { "day": "Tuesday", ... },
+    { "day": "Wednesday", ... },
+    { "day": "Thursday", ... },
+    { "day": "Friday", ... },
+    { "day": "Saturday", ... },
+    { "day": "Sunday", ... }
   ],
   "weeklyTotals": {
-    "calories": number,
-    "protein": number,
-    "carbs": number,
-    "fats": number,
-    "fiber": number
+    "calories": ${targetMacros.calories * 7},
+    "protein": ${targetMacros.protein * 7},
+    "carbs": ${targetMacros.carbs * 7},
+    "fats": ${targetMacros.fats * 7},
+    "fiber": ${targetMacros.fiber * 7}
   },
   "nutritionTips": [
-    "Tip 1",
-    "Tip 2"
+    "Drink plenty of water throughout the day.",
+    "Prioritize whole, unprocessed foods for better digestion and nutrients."
   ],
   "mealTiming": {
-    "breakfast": "Time",
-    "lunch": "Time",
-    "snack": "Time",
-    "dinner": "Time"
+    "breakfast": "08:00 AM",
+    "lunch": "01:00 PM",
+    "snack": "04:30 PM",
+    "dinner": "08:00 PM"
   }
 }
     `.trim();
-  }
+}
+
+
 
   private static parseDietPlanResponse(response: string) {
     try {
@@ -143,6 +206,10 @@ Return JSON in the format:
         .replace(/,\s*]/g, ']');
 
       const parsed = JSON.parse(safeJson);
+
+      if (!parsed.weeklyPlan || parsed.weeklyPlan.length !== 7) {
+        throw new Error('Incomplete weekly plan. AI did not return all 7 days.');
+      }
 
       return {
         weeklyPlan: parsed.weeklyPlan.map((day: any) => ({
@@ -158,7 +225,7 @@ Return JSON in the format:
         mealTiming: parsed.mealTiming || {}
       };
     } catch (error) {
-      throw new Error('Failed to parse Gemini diet response');
+      throw new Error('Failed to parse Gemini diet response: ' + (error as Error).message);
     }
   }
 
@@ -171,7 +238,7 @@ Return JSON in the format:
     }
 
     const items = meal.foodItems.map((item: any) => ({
-      food: item.item || item.food || 'Unknown food',
+      food: item.food || item.item || 'Unknown food',
       quantity: item.quantity || '',
       calories: item.calories || 0,
       protein: item.protein || 0,
@@ -211,7 +278,6 @@ Return JSON in the format:
         totals.fiber += item.fiber || 0;
       });
     }
-
-    return totals;
+          return totals;
   }
 }
