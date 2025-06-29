@@ -1,83 +1,87 @@
 export interface UserProfile {
-  name: string;
-  age: number;
-  gender: 'male' | 'female';
-  weight: number; // kg
-  height: number; // cm
-  fitnessGoal: 'fat-loss' | 'bulking' | 'recomposition';
-  experienceLevel: 'beginner' | 'intermediate' | 'advanced';
-  dietPreference: 'vegetarian' | 'non-vegetarian';
+  name: string
+  age: number
+  gender: "male" | "female"
+  weight: number // kg
+  height: number // cm
+  fitnessGoal: "fat-loss" | "bulking" | "recomposition"
+  experienceLevel: "beginner" | "intermediate" | "advanced"
+  dietPreference: "vegetarian" | "non-vegetarian"
   physicalCondition: {
-    activityLevel: 'sedentary' | 'lightly-active' | 'moderately-active' | 'very-active' | 'extremely-active';
-    medicalConditions: string;
-    foodAllergies: string;
-    supplements: string;
-  };
+    activityLevel: "sedentary" | "lightly-active" | "moderately-active" | "very-active" | "extremely-active"
+    medicalConditions: string
+    foodAllergies: string
+    supplements: string
+  }
 }
 
 export interface MacroNutrients {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  fiber: number;
+  calories: number
+  protein: number
+  carbs: number
+  fats: number
+  fiber: number
 }
 
 export interface Meal {
-  name: string;
+  name: string
   items: Array<{
-    food: string;
-    quantity: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fats: number;
-    fiber: number;
-  }>;
-  totalMacros: MacroNutrients;
+    food: string
+    quantity: string
+    calories: number
+    protein: number
+    carbs: number
+    fats: number
+    fiber: number
+  }>
+  totalMacros: MacroNutrients
 }
 
 export interface DayMealPlan {
-  day: string;
-  breakfast: Meal;
-  lunch: Meal;
-  snack: Meal;
-  dinner: Meal;
-  dailyTotals: MacroNutrients;
+  day: string
+  breakfast: Meal
+  lunch: Meal
+  snack: Meal
+  dinner: Meal
+  dailyTotals: MacroNutrients
 }
 
 export interface WeeklyDietPlan {
-  weeklyPlan: DayMealPlan[];
-  weeklyTotals: MacroNutrients;
-  nutritionTips?: string[];
+  weeklyPlan: DayMealPlan[]
+  weeklyTotals: MacroNutrients
+  nutritionTips?: string[]
   mealTiming?: {
-    breakfast: string;
-    lunch: string;
-    snack: string;
-    dinner: string;
-  };
+    breakfast: string
+    lunch: string
+    snack: string
+    dinner: string
+  }
 }
 
 export interface DietPlan {
-  breakfast: Meal;
-  lunch: Meal;
-  snack: Meal;
-  dinner: Meal;
-  dailyTotals: MacroNutrients;
+  breakfast: Meal
+  lunch: Meal
+  snack: Meal
+  dinner: Meal
+  dailyTotals: MacroNutrients
 }
 
 export interface WorkoutDay {
-  day: string;
-  muscleGroups: string[];
+  day: string
+  muscleGroups: string[]
   exercises: Array<{
-    name: string;
-    sets: number;
-    reps: string;
-    notes?: string;
-  }>;
+    name: string
+    sets: number
+    reps: string
+    restTime?: string // <-- add this
+    notes?: string
+  }>
 }
 
 export interface WorkoutPlan {
-  weeklyPlan: WorkoutDay[];
-  totalDays: number;
+  restDays: string[] // <-- change from boolean to string[]
+  notes: string[]    // <-- change from any to string[]
+  weeklyPlan: WorkoutDay[]
+  totalDays: number
 }
+
