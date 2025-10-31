@@ -25,24 +25,38 @@ export interface GeminiDietRequest {
 }
 
 export class GeminiService {
-  private static readonly API_KEY = 'AIzaSyDN4A5iAUSUrUQwNrX5qPQB-FIGgGOXRDw';
-  private static readonly API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+  // ✅ Gemini 2.0 Flash endpoint
+  private static readonly API_URL =
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  // ✅ Move key to .env for security (for now, using your provided key directly)
+  private static readonly API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
   static async generateDietPlan(request: GeminiDietRequest) {
     const prompt = this.createDietPlanPrompt(request);
 
     try {
-      const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, {
+      // ✅ Use header instead of query param
+      const response = await fetch(this.API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-goog-api-key': this.API_KEY,
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+        }),
       });
 
       if (!response.ok) {
         const errorBody = await response.json();
-        throw new Error(`Gemini API error: ${errorBody.error?.message || response.statusText}`);
+        throw new Error(
+          `Gemini API error: ${errorBody.error?.message || response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -53,60 +67,39 @@ export class GeminiService {
       const parsed = this.parseDietPlanResponse(generatedText);
       return parsed;
     } catch (error) {
-      console.error('Error generating diet plan:', error);
+      console.error('❌ Error generating diet plan:', error);
       throw error;
     }
   }
 
-private static createDietPlanPrompt(request: GeminiDietRequest): string {
-  const { userProfile, targetMacros, physicalCondition } = request;
+  private static createDietPlanPrompt(request: GeminiDietRequest): string {
+    const { userProfile, targetMacros, physicalCondition } = request;
 
-  return `
-Generate a complete and personalized 7-day diet plan in strict JSON format. Follow these instructions:
+    return `
+Generate a complete and personalized 7-day diet plan in strict JSON format. Follow these rules:
 
 ======================
 📌 STRUCTURE RULES:
 ======================
 - Return ONLY VALID JSON. No comments or explanations.
 - The object must contain:
-  • "weeklyPlan": 7-day meal plan (Monday to Sunday, in order)
+  • "weeklyPlan": 7-day meal plan (Monday–Sunday)
   • "weeklyTotals": summed macros of all 7 days
-  • "nutritionTips": helpful tips as an array of 2 strings
-  • "mealTiming": standard meal times for all days
+  • "nutritionTips": array of 2 short strings
+  • "mealTiming": standard meal times
 
 ======================
-📌 MEAL FORMAT:
+📌 MACRO TARGETS:
 ======================
-Each day must contain:
-- "day": string (e.g., "Monday")
-- "breakfast", "lunch", "snack", "dinner": each with
-  • "foodItems": an array of meals with
-    - "food": non-generic name (avoid "unknown")
-    - "quantity": exact measurement (e.g., "1 cup", "150g")
-    - "calories", "protein", "carbs", "fats", "fiber": numeric
-    - "cookingInstructions": short sentence
-  • "totalMacros": sum of macros for that meal
-- "dailyTotals": sum of all macros for the entire day (based on foodItems)
+Calories: ${targetMacros.calories}
+Protein: ${targetMacros.protein}g
+Carbs: ${targetMacros.carbs}g
+Fats: ${targetMacros.fats}g
+Fiber: ${targetMacros.fiber}g
+(±2% tolerance per day)
 
 ======================
-📌 MACRO ENFORCEMENT:
-======================
-- Each day's dailyTotals **must closely match the following targets**:
-  • Calories: ${targetMacros.calories}
-  • Protein: ${targetMacros.protein}g ✅ MUST match this value ±2%
-  • Carbs: ${targetMacros.carbs}g
-  • Fats: ${targetMacros.fats}g
-  • Fiber: ${targetMacros.fiber}g
-
-- Allow only ±2% deviation. For example:
-  • 150g protein → min: 147g, max: 153g
-- All 5 macros must be present in each food item and meal.
-- No rounding or vague values. Use real numbers.
-- Do NOT overfit or underfit macros.
-- Do NOT copy meals between days.
-
-======================
-📌 USER INFO:
+📌 USER PROFILE:
 ======================
 - Name: ${userProfile.name}
 - Age: ${userProfile.age}
@@ -114,21 +107,20 @@ Each day must contain:
 - Weight: ${userProfile.weight} kg
 - Height: ${userProfile.height} cm
 - Fitness Goal: ${userProfile.fitnessGoal}
-- Experience Level: ${userProfile.experienceLevel}
-- Diet Preference: ${userProfile.dietPreference}
+- Experience: ${userProfile.experienceLevel}
+- Diet: ${userProfile.dietPreference}
 
 ======================
-📌 PHYSICAL CONDITION:
+📌 CONDITIONS:
 ======================
 - Activity Level: ${physicalCondition.activityLevel}
 - Medical Conditions: ${physicalCondition.medicalConditions || 'None'}
-- Food Allergies: ${physicalCondition.foodAllergies || 'None'}
+- Allergies: ${physicalCondition.foodAllergies || 'None'}
 - Supplements: ${physicalCondition.supplements || 'None'}
 
 ======================
-📌 RETURN JSON TEMPLATE:
+📌 JSON TEMPLATE:
 ======================
-
 {
   "weeklyPlan": [
     {
@@ -143,7 +135,7 @@ Each day must contain:
             "carbs": 40,
             "fats": 12,
             "fiber": 6,
-            "cookingInstructions": "Boil oats in milk for 5 mins, add chopped almonds."
+            "cookingInstructions": "Boil oats in milk for 5 mins, add almonds."
           }
         ],
         "totalMacros": {
@@ -164,13 +156,7 @@ Each day must contain:
         "fats": ${targetMacros.fats},
         "fiber": ${targetMacros.fiber}
       }
-    },
-    { "day": "Tuesday", ... },
-    { "day": "Wednesday", ... },
-    { "day": "Thursday", ... },
-    { "day": "Friday", ... },
-    { "day": "Saturday", ... },
-    { "day": "Sunday", ... }
+    }
   ],
   "weeklyTotals": {
     "calories": ${targetMacros.calories * 7},
@@ -180,8 +166,8 @@ Each day must contain:
     "fiber": ${targetMacros.fiber * 7}
   },
   "nutritionTips": [
-    "Drink plenty of water throughout the day.",
-    "Prioritize whole, unprocessed foods for better digestion and nutrients."
+    "Drink plenty of water.",
+    "Eat whole, unprocessed foods."
   ],
   "mealTiming": {
     "breakfast": "08:00 AM",
@@ -191,9 +177,7 @@ Each day must contain:
   }
 }
     `.trim();
-}
-
-
+  }
 
   private static parseDietPlanResponse(response: string) {
     try {
@@ -208,7 +192,7 @@ Each day must contain:
       const parsed = JSON.parse(safeJson);
 
       if (!parsed.weeklyPlan || parsed.weeklyPlan.length !== 7) {
-        throw new Error('Incomplete weekly plan. AI did not return all 7 days.');
+        throw new Error('Incomplete weekly plan.');
       }
 
       return {
@@ -218,14 +202,16 @@ Each day must contain:
           lunch: this.ensureMealStructure(day.lunch),
           snack: this.ensureMealStructure(day.snack),
           dinner: this.ensureMealStructure(day.dinner),
-          dailyTotals: day.dailyTotals || this.computeDailyTotals(day)
+          dailyTotals: day.dailyTotals || this.computeDailyTotals(day),
         })),
         weeklyTotals: parsed.weeklyTotals,
         nutritionTips: parsed.nutritionTips || [],
-        mealTiming: parsed.mealTiming || {}
+        mealTiming: parsed.mealTiming || {},
       };
     } catch (error) {
-      throw new Error('Failed to parse Gemini diet response: ' + (error as Error).message);
+      throw new Error(
+        'Failed to parse Gemini diet response: ' + (error as Error).message
+      );
     }
   }
 
@@ -233,7 +219,7 @@ Each day must contain:
     if (!meal || !Array.isArray(meal.foodItems)) {
       return {
         items: [],
-        totalMacros: { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
+        totalMacros: { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 },
       };
     }
 
@@ -245,7 +231,7 @@ Each day must contain:
       carbs: item.carbs || 0,
       fats: item.fats || 0,
       fiber: item.fiber || 0,
-      cookingInstructions: item.cookingInstructions || ''
+      cookingInstructions: item.cookingInstructions || '',
     }));
 
     const totalMacros = items.reduce(
@@ -254,7 +240,7 @@ Each day must contain:
         protein: acc.protein + item.protein,
         carbs: acc.carbs + item.carbs,
         fats: acc.fats + item.fats,
-        fiber: acc.fiber + item.fiber
+        fiber: acc.fiber + item.fiber,
       }),
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
@@ -278,6 +264,6 @@ Each day must contain:
         totals.fiber += item.fiber || 0;
       });
     }
-          return totals;
+    return totals;
   }
 }
